@@ -1,17 +1,101 @@
-<form (ngSubmit)="onSubmit()">
-  <div>
-    <label>Email:</label>
-    <input type="email" [(ngModel)]="email" name="email" placeholder="Email" required />
-  </div>
+<div class="login-container">
+  <div class="login-wrapper">
+    <mat-card class="login-card">
+      <mat-card-content>
+        <div class="header">
+          <div class="logo-section">
+            <mat-icon class="logo-icon">home</mat-icon>
+            <h1>EstateHub</h1>
+          </div>
+          <h2>Welcome Back</h2>
+          <p class="subtitle">Sign in to access your property dashboard</p>
+        </div>
 
-  <div>
-    <label>Password:</label>
-    <input type="password" [(ngModel)]="password" name="password" placeholder="Password" required />
-  </div>
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Email Address</mat-label>
+            <input matInput
+                   formControlName="email"
+                   placeholder="Enter your email"
+                   type="email"
+                   autocomplete="email">
+            <mat-icon matSuffix>email</mat-icon>
+            <mat-error *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+              {{ getErrorMessage('email') }}
+            </mat-error>
+          </mat-form-field>
 
-  <button type="submit">Login</button>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Password</mat-label>
+            <input matInput
+                   formControlName="password"
+                   placeholder="Enter your password"
+                   [type]="hidePassword ? 'password' : 'text'"
+                   autocomplete="current-password">
+            <button mat-icon-button
+                    matSuffix
+                    type="button"
+                    (click)="hidePassword = !hidePassword"
+                    [attr.aria-label]="'Hide password'"
+                    [attr.aria-pressed]="hidePassword">
+              <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+            </button>
+            <mat-error *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+              {{ getErrorMessage('password') }}
+            </mat-error>
+          </mat-form-field>
 
-  <div *ngIf="error" style="color: red; margin-top: 10px;">
-    {{ error }}
+          <button mat-raised-button
+                  color="primary"
+                  type="submit"
+                  class="login-button"
+                  [disabled]="isLoading">
+            <div style="display: flex; align-items: center;">        
+              <mat-spinner *ngIf="isLoading" diameter="20" class="button-spinner"></mat-spinner>
+              <span *ngIf="!isLoading">Sign In</span>
+              <span *ngIf="isLoading">Signing In...</span>
+            </div>
+          </button>
+
+          <div class="signup-link">
+            <p>Don't have an account? <a routerLink="/register" class="link">Create Account</a></p>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="features-section">
+      <h3>Your Property Journey Starts Here</h3>
+      <div class="feature-list">
+        <div class="feature-item">
+          <mat-icon>dashboard</mat-icon>
+          <div class="feature-content">
+            <span class="feature-title">Personal Dashboard</span>
+            <span class="feature-desc">Manage your listings and bids</span>
+          </div>
+        </div>
+        <div class="feature-item">
+          <mat-icon>favorite</mat-icon>
+          <div class="feature-content">
+            <span class="feature-title">Saved Properties</span>
+            <span class="feature-desc">Keep track of favorites</span>
+          </div>
+        </div>
+        <div class="feature-item">
+          <mat-icon>schedule</mat-icon>
+          <div class="feature-content">
+            <span class="feature-title">Viewing History</span>
+            <span class="feature-desc">Track all your appointments</span>
+          </div>
+        </div>
+        <div class="feature-item">
+          <mat-icon>trending_up</mat-icon>
+          <div class="feature-content">
+            <span class="feature-title">Market Insights</span>
+            <span class="feature-desc">Stay ahead of trends</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-</form>
+</div>
