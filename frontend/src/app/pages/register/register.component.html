@@ -1,0 +1,24 @@
+<h2>Register</h2>
+<form (ngSubmit)="onSubmit()">
+  <label>
+    Name:
+    <input [(ngModel)]="name" name="name" required />
+  </label>
+  <br />
+  <label>
+    Email:
+    <input [(ngModel)]="email" name="email" type="email" required />
+  </label>
+  <br />
+  <label>
+    Password:
+    <input [(ngModel)]="password" name="password" type="password" required />
+  </label>
+  <br />
+  <label>
+    Confirm Password:
+    <input [(ngModel)]="password_confirmation" name="password_confirmation" type="password" required />
+  </label>
+  <br />
+  <button type="submit">Register</button>
+</form>
