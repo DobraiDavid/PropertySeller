@@ -1,1 +1,279 @@
-<p>home works!</p>
+<div class="homepage-container">
+  <!-- Top Navigation Bar -->
+  <mat-toolbar class="navbar">
+    <div class="nav-left">
+      <button mat-icon-button class="menu-button" (click)="toggleFilterPanel()">
+        <mat-icon>tune</mat-icon>
+      </button>
+      <div class="logo-section">
+        <mat-icon class="logo-icon">home</mat-icon>
+        <span class="logo-text">EstateHub</span>
+      </div>
+    </div>
+
+    <div class="nav-center">
+      <div class="nav-center" [formGroup]="filterForm">
+        <mat-form-field appearance="outline" class="search-field">
+            <mat-icon matPrefix>search</mat-icon>
+            <input matInput 
+                formControlName="searchQuery"
+                placeholder="Search by location, property name...">
+
+            <button mat-icon-button matSuffix *ngIf="filterForm.get('searchQuery')?.value" (click)="filterForm.get('searchQuery')?.setValue('')">
+            <mat-icon>clear</mat-icon>
+            </button>
+        </mat-form-field>
+      </div> 
+    </div>
+
+    <div class="nav-right">
+      <button mat-icon-button [matBadge]="filteredProperties.length" matBadgeColor="accent" (click)="toggleListView()">
+        <mat-icon>list</mat-icon>
+      </button>
+      <button mat-icon-button [matMenuTriggerFor]="profileMenu">
+        <mat-icon>account_circle</mat-icon>
+      </button>
+      <mat-menu #profileMenu="matMenu">
+        <button mat-menu-item>
+          <mat-icon>dashboard</mat-icon>
+          <span>Dashboard</span>
+        </button>
+        <button mat-menu-item>
+          <mat-icon>favorite</mat-icon>
+          <span>Saved Properties</span>
+        </button>
+        <button mat-menu-item>
+          <mat-icon>add</mat-icon>
+          <span>List Property</span>
+        </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item>
+          <mat-icon>settings</mat-icon>
+          <span>Settings</span>
+        </button>
+        <button mat-menu-item>
+          <mat-icon>logout</mat-icon>
+          <span>Sign Out</span>
+        </button>
+      </mat-menu>
+    </div>
+  </mat-toolbar>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- Google Maps Container -->
+    <div #mapContainer class="map-container"></div>
+
+    <!-- Filter Panel -->
+    <mat-sidenav-container class="sidenav-container" [class.panel-open]="isFilterPanelOpen">
+      <mat-sidenav #filterSidenav 
+                   mode="side" 
+                   position="end" 
+                   [opened]="isFilterPanelOpen"
+                   class="filter-panel">
+        <div class="filter-header">
+          <h3>Filters</h3>
+          <button mat-icon-button (click)="toggleFilterPanel()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="filter-content" [formGroup]="filterForm">
+          <!-- Property Type -->
+          <mat-form-field appearance="outline">
+            <mat-label>Property Type</mat-label>
+            <mat-select formControlName="propertyType">
+              <mat-option *ngFor="let type of propertyTypes" [value]="type">
+                {{ type }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Price Range -->
+          <div class="filter-section">
+            <h4>Price Range</h4>
+            <div class="price-inputs">
+              <mat-form-field appearance="outline" class="price-field">
+                <mat-label>Min Price</mat-label>
+                <input matInput type="number" formControlName="minPrice">
+                <span matPrefix>$</span>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="price-field">
+                <mat-label>Max Price</mat-label>
+                <input matInput type="number" formControlName="maxPrice">
+                <span matPrefix>$</span>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Bedrooms -->
+          <mat-form-field appearance="outline">
+            <mat-label>Min Bedrooms</mat-label>
+            <mat-select formControlName="bedrooms">
+              <mat-option [value]="0">Any</mat-option>
+              <mat-option [value]="1">1+</mat-option>
+              <mat-option [value]="2">2+</mat-option>
+              <mat-option [value]="3">3+</mat-option>
+              <mat-option [value]="4">4+</mat-option>
+              <mat-option [value]="5">5+</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Bathrooms -->
+          <mat-form-field appearance="outline">
+            <mat-label>Min Bathrooms</mat-label>
+            <mat-select formControlName="bathrooms">
+              <mat-option [value]="0">Any</mat-option>
+              <mat-option [value]="1">1+</mat-option>
+              <mat-option [value]="2">2+</mat-option>
+              <mat-option [value]="3">3+</mat-option>
+              <mat-option [value]="4">4+</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Area Range -->
+          <div class="filter-section">
+            <h4>Square Footage</h4>
+            <div class="price-inputs">
+              <mat-form-field appearance="outline" class="price-field">
+                <mat-label>Min Sq Ft</mat-label>
+                <input matInput type="number" formControlName="minArea">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="price-field">
+                <mat-label>Max Sq Ft</mat-label>
+                <input matInput type="number" formControlName="maxArea">
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Additional Filters -->
+          <div class="filter-section">
+            <h4>Additional Features</h4>
+            <mat-checkbox formControlName="hasVirtualTour">
+              Virtual Tour Available
+            </mat-checkbox>
+            <mat-checkbox formControlName="newListings">
+              New Listings Only
+            </mat-checkbox>
+          </div>
+
+          <!-- Filter Actions -->
+          <div class="filter-actions">
+            <button mat-stroked-button (click)="resetFilters()">
+              Reset All
+            </button>
+            <button mat-raised-button color="primary" (click)="toggleFilterPanel()">
+              Apply Filters ({{ filteredProperties.length }})
+            </button>
+          </div>
+        </div>
+      </mat-sidenav>
+
+      <mat-sidenav-content class="map-content"></mat-sidenav-content>
+    </mat-sidenav-container>
+
+    <!-- List View Panel -->
+    <div class="list-panel" [class.open]="isListViewOpen">
+      <div class="list-header">
+        <h3>Properties ({{ filteredProperties.length }})</h3>
+        <button mat-icon-button (click)="toggleListView()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      
+      <div class="list-content">
+        <mat-card *ngFor="let property of filteredProperties" 
+                  class="property-card"
+                  (click)="selectProperty(property)">
+          <div class="property-image">
+            <img [src]="property.image" [alt]="property.title">
+            <div class="property-badges">
+              <span class="badge new" *ngIf="property.isNew">New</span>
+              <span class="badge tour" *ngIf="property.hasVirtualTour">
+                <mat-icon>videocam</mat-icon>
+              </span>
+            </div>
+          </div>
+          <mat-card-content class="property-info">
+            <h4>{{ property.title }}</h4>
+            <p class="price">{{ formatPrice(property.price) }}</p>
+            <p class="address">{{ property.address }}</p>
+            <div class="property-details">
+              <span class="detail">
+                <mat-icon>bed</mat-icon>
+                {{ property.bedrooms }}
+              </span>
+              <span class="detail">
+                <mat-icon>bathtub</mat-icon>
+                {{ property.bathrooms }}
+              </span>
+              <span class="detail">
+                <mat-icon>square_foot</mat-icon>
+                {{ property.area }} sq ft
+              </span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Property Details Modal -->
+    <div class="property-modal" *ngIf="selectedProperty" (click)="closePropertyDetails()">
+      <mat-card class="property-details-card" (click)="$event.stopPropagation()">
+        <button mat-icon-button class="close-button" (click)="closePropertyDetails()">
+          <mat-icon>close</mat-icon>
+        </button>
+        
+        <div class="property-image-large">
+          <img [src]="selectedProperty.image" [alt]="selectedProperty.title">
+          <div class="property-badges">
+            <span class="badge new" *ngIf="selectedProperty.isNew">New Listing</span>
+            <span class="badge tour" *ngIf="selectedProperty.hasVirtualTour">Virtual Tour</span>
+          </div>
+        </div>
+
+        <mat-card-content>
+          <h2>{{ selectedProperty.title }}</h2>
+          <p class="price-large">{{ formatPrice(selectedProperty.price) }}</p>
+          <p class="address">{{ selectedProperty.address }}</p>
+          
+          <div class="details-grid">
+            <div class="detail-item">
+              <mat-icon>bed</mat-icon>
+              <span>{{ selectedProperty.bedrooms }} Bedrooms</span>
+            </div>
+            <div class="detail-item">
+              <mat-icon>bathtub</mat-icon>
+              <span>{{ selectedProperty.bathrooms }} Bathrooms</span>
+            </div>
+            <div class="detail-item">
+              <mat-icon>square_foot</mat-icon>
+              <span>{{ selectedProperty.area }} sq ft</span>
+            </div>
+            <div class="detail-item">
+              <mat-icon>home</mat-icon>
+              <span>{{ selectedProperty.type }}</span>
+            </div>
+          </div>
+
+          <div class="action-buttons">
+            <button mat-raised-button color="primary">
+              <mat-icon>schedule</mat-icon>
+              Schedule Viewing
+            </button>
+            <button mat-raised-button color="accent">
+              <mat-icon>gavel</mat-icon>
+              Place Bid
+            </button>
+            <button mat-icon-button>
+              <mat-icon>favorite_border</mat-icon>
+            </button>
+            <button mat-icon-button>
+              <mat-icon>share</mat-icon>
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>
