@@ -8,7 +8,7 @@ class Listing extends Model
 {
     protected $fillable = [
         'user_id', 'title', 'description', 'price', 'area', 'address', 'city',
-        'images', 'type', 'bedrooms', 'bathrooms', 'lat', 'lng'
+        'images', 'type', 'bedrooms', 'bathrooms', 'lat', 'lng', 'phoneNumber', 'email'
     ];
 
     protected $casts = [

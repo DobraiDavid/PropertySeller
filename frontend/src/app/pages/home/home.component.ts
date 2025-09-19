@@ -88,7 +88,6 @@ export class HomeComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loadGoogleMaps();
     this.setupFilterSubscription();
     this.fetchListings();
   }
@@ -189,6 +188,15 @@ export class HomeComponent implements OnInit {
       }
     });
   }
+
+  ngAfterViewInit() {
+  this.loadGoogleMaps();
+  setTimeout(() => {
+    if (typeof google !== 'undefined' && !this.map) {
+      this.initializeMap();
+    }
+  }, 200);
+}
 
   applyFilters() {
     const filters = this.filterForm.value;
