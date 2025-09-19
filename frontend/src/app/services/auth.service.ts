@@ -28,8 +28,19 @@ export class AuthService {
   }
 
   // Logout and clear token
-  logout(): void {
-    localStorage.removeItem('token');
+  logout(): Observable<any> {
+    const token = localStorage.getItem('token');
+    if (!token) return new Observable(observer => observer.complete());
+
+    return this.http.post(`${this.apiUrl}/logout`, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }).pipe(
+      tap(() => {
+        localStorage.removeItem('token'); 
+      })
+    );
   }
 
   // Get logged-in user info

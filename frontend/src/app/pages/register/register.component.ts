@@ -89,33 +89,52 @@ export class RegisterComponent {
     return '';
   }
 
-  onSubmit() {
-    if (this.registerForm.valid) {
-      this.isLoading = true;
-      
-      this.authService.register(this.registerForm.value).subscribe({
-        next: (res) => {
-          this.isLoading = false;
-          this.snackBar.open('Registration successful! Welcome to EstateHub!', 'Close', {
-            duration: 5000,
-            panelClass: ['success-snackbar']
-          });
-          console.log('Registered successfully:', res);
-          this.router.navigate(['/']); 
-        },
-        error: (err) => {
-          this.isLoading = false;
-          this.snackBar.open('Registration failed. Please try again.', 'Close', {
-            duration: 5000,
-            panelClass: ['error-snackbar']
-          });
-          console.error('Registration failed:', err);
-        }
-      });
-    } else {
-      this.markFormGroupTouched();
-    }
+onSubmit() {
+  if (this.registerForm.valid) {
+    this.isLoading = true;
+    const formValue = this.registerForm.value;
+
+    this.authService.register(formValue).subscribe({
+      next: (res) => {
+        console.log('Registered successfully:', res);
+
+        // Automatically log in after registration
+        this.authService.login({
+          email: formValue.email,
+          password: formValue.password
+        }).subscribe({
+          next: (loginRes) => {
+            this.isLoading = false;
+            this.snackBar.open('Registration successful! You are now logged in.', 'Close', {
+              duration: 5000,
+              panelClass: ['success-snackbar']
+            });
+            this.router.navigate(['/']); 
+          },
+          error: (loginErr) => {
+            this.isLoading = false;
+            this.snackBar.open('Registration succeeded but login failed. Please log in manually.', 'Close', {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+            console.error('Login failed after registration:', loginErr);
+          }
+        });
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.snackBar.open('Registration failed. Please try again.', 'Close', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
+        console.error('Registration failed:', err);
+      }
+    });
+  } else {
+    this.markFormGroupTouched();
   }
+}
+
 
   private markFormGroupTouched() {
     Object.keys(this.registerForm.controls).forEach(key => {

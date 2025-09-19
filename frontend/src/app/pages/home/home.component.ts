@@ -17,14 +17,16 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
+import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { ListingService, Listing } from '../../services/listing.service';
 import { Loader } from '@googlemaps/js-api-loader';
+import { AuthService } from '../../services/auth.service';
 
 declare const google: any;
 
 interface Property extends Listing {
-  image: string; // First image from images array for convenience
+  image: string; 
 }
 
 @Component({
@@ -59,24 +61,29 @@ export class HomeComponent implements OnInit {
   map: any;
   markers: any[] = [];
   filterForm: FormGroup;
-  isFilterPanelOpen = false;
-  isListViewOpen = false;
+  isFilterPanelOpen = true; 
+  isListViewOpen = true; 
   selectedProperty: Property | null = null;
 
   properties: Property[] = [];
   filteredProperties: Property[] = [];
   propertyTypes = ['All Types', 'House', 'Condo', 'Studio', 'Townhouse', 'Apartment'];
 
-  constructor(private fb: FormBuilder, private listingService: ListingService) {
+  constructor(
+    public authService: AuthService,
+    private fb: FormBuilder, 
+    private listingService: ListingService,
+    private router: Router
+  ) {
     this.filterForm = this.fb.group({
       searchQuery: [''],
       propertyType: ['All Types'],
-      minPrice: [0],
-      maxPrice: [2000000],
+      minPrice: [null],
+      maxPrice: [null],
       bedrooms: [0],
       bathrooms: [0],
-      minArea: [0],
-      maxArea: [5000]
+      minArea: [null],
+      maxArea: [null]
     });
   }
 
@@ -92,6 +99,8 @@ export class HomeComponent implements OnInit {
         ...l,
         lat: l.lat ? Number(l.lat) : 0,
         lng: l.lng ? Number(l.lng) : 0,
+        price: l.price ? l.price / 1000000 : 0,
+        area: l.area || 0,
         image: Array.isArray(l.images) && l.images.length > 0 
           ? l.images[0] 
           : 'https://via.placeholder.com/400'
@@ -102,6 +111,11 @@ export class HomeComponent implements OnInit {
   }
   
   loadGoogleMaps() {
+    if (typeof google !== 'undefined') {
+      this.initializeMap();
+      return;
+    }
+
     const loader = new Loader({
       apiKey: environment.googleMapsApiKey,
       version: "weekly",
@@ -112,12 +126,14 @@ export class HomeComponent implements OnInit {
       this.initializeMap();
     }).catch(err => {
       console.error("Error loading Google Maps", err);
+      // Retry after delay
+      setTimeout(() => this.loadGoogleMaps(), 1000);
     });
   }
 
   initializeMap() {
     const mapOptions = {
-      center: { lat: 40.7589, lng: -73.9851 },
+      center: { lat: 47.956967, lng: 21.715700 },
       zoom: 13,
       styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }],
       mapTypeControl: false,
@@ -143,8 +159,8 @@ export class HomeComponent implements OnInit {
             url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
               <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="20" cy="20" r="18" fill="#667eea" stroke="white" stroke-width="3"/>
-                <text x="20" y="26" text-anchor="middle" fill="white" font-size="12" font-weight="bold">
-                  $${Math.round(property.price / 1000)}K
+                <text x="20" y="26" text-anchor="middle" fill="white" font-size="10" font-weight="bold">
+                  ${property.price.toFixed(1)}M
                 </text>
               </svg>
             `),
@@ -166,29 +182,63 @@ export class HomeComponent implements OnInit {
     this.filterForm.valueChanges.subscribe(() => this.applyFilters());
   }
 
+  logout() {
+    this.authService.logout().subscribe({
+      error: () => {
+        localStorage.removeItem('token');
+      }
+    });
+  }
+
   applyFilters() {
     const filters = this.filterForm.value;
+    
     this.filteredProperties = this.properties.filter(property => {
-      if (filters.searchQuery && !property.title.toLowerCase().includes(filters.searchQuery.toLowerCase()) &&
-          !property.address.toLowerCase().includes(filters.searchQuery.toLowerCase())) return false;
-      if (filters.propertyType && filters.propertyType !== 'All Types' && property.type !== filters.propertyType) return false;
-      if (property.price < filters.minPrice || property.price > filters.maxPrice) return false;
+      // Search query filter
+      if (filters.searchQuery && 
+          !property.title.toLowerCase().includes(filters.searchQuery.toLowerCase()) && 
+          !property.address.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
+        return false;
+      }
+
+      // Property type filter
+      if (filters.propertyType && filters.propertyType !== 'All Types' && property.type !== filters.propertyType) {
+        return false;
+      }
+
+      // Price filters 
+      if (filters.minPrice !== null && property.price < filters.minPrice) return false;
+      if (filters.maxPrice !== null && property.price > filters.maxPrice) return false;
+
+      // Bedrooms filter
       if (filters.bedrooms > 0 && (property.bedrooms ?? 0) < filters.bedrooms) return false;
+
+      // Bathrooms filter
       if (filters.bathrooms > 0 && (property.bathrooms ?? 0) < filters.bathrooms) return false;
-      if ((property.area ?? 0) < filters.minArea || (property.area ?? 0) > filters.maxArea) return false;
+
+      // Area filters 
+      if (filters.minArea !== null && (property.area ?? 0) < filters.minArea) return false;
+      if (filters.maxArea !== null && (property.area ?? 0) > filters.maxArea) return false;
+
       return true;
     });
+
     this.addPropertyMarkers();
   }
 
-  toggleFilterPanel() { this.isFilterPanelOpen = !this.isFilterPanelOpen; }
-  toggleListView() { this.isListViewOpen = !this.isListViewOpen; }
+  toggleFilterPanel() { 
+    this.isFilterPanelOpen = !this.isFilterPanelOpen; 
+  }
+
+  toggleListView() { 
+    this.isListViewOpen = !this.isListViewOpen; 
+  }
 
   selectProperty(property: Property) {
     this.selectedProperty = property;
     if (property.lat && property.lng) {
       this.map.setCenter({ lat: property.lat, lng: property.lng });
-      this.map.setZoom(15);
+      this.map.setZoom(16);
     }
   }
 
@@ -196,18 +246,37 @@ export class HomeComponent implements OnInit {
     this.filterForm.reset({
       searchQuery: '',
       propertyType: 'All Types',
-      minPrice: 0,
-      maxPrice: 2000000,
+      minPrice: null,
+      maxPrice: null,
       bedrooms: 0,
       bathrooms: 0,
-      minArea: 0,
-      maxArea: 5000
+      minArea: null,
+      maxArea: null
     });
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(price);
+    return `${price.toFixed(2)} million HUF`;
   }
 
-  closePropertyDetails() { this.selectedProperty = null; }
+  formatArea(area: number): string {
+    return `${area} m²`;
+  }
+
+  closePropertyDetails() { 
+    this.selectedProperty = null; 
+  }
+
+  navigateToLogin() {
+    this.router.navigate(['/login']);
+  }
+
+  navigateToListProperty() {
+    if (this.authService.isLoggedIn()) {
+      this.router.navigate(['/list']);
+    } else {
+      this.router.navigate(['/login']);
+    }
+  }
+
 }

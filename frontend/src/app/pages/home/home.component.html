@@ -2,17 +2,13 @@
   <!-- Top Navigation Bar -->
   <mat-toolbar class="navbar">
     <div class="nav-left">
-      <button mat-icon-button class="menu-button" (click)="toggleFilterPanel()">
-        <mat-icon>tune</mat-icon>
-      </button>
       <div class="logo-section">
         <mat-icon class="logo-icon">home</mat-icon>
         <span class="logo-text">EstateHub</span>
       </div>
     </div>
 
-    <div class="nav-center">
-      <div [formGroup]="filterForm">
+    <div class="nav-center" [formGroup]="filterForm">
         <mat-form-field appearance="outline" class="search-field">
           <mat-icon matPrefix>search</mat-icon>
           <input matInput 
@@ -22,14 +18,23 @@
             <mat-icon>clear</mat-icon>
           </button>
         </mat-form-field>
-      </div>
     </div>
 
     <div class="nav-right">
-      <button mat-icon-button [matBadge]="filteredProperties.length" matBadgeColor="accent" (click)="toggleListView()">
-        <mat-icon>list</mat-icon>
+      <button mat-raised-button color="accent" class="list-property-btn" (click)="navigateToListProperty()">
+        <mat-icon>add_home</mat-icon>
+        List Property
       </button>
-      <button mat-icon-button [matMenuTriggerFor]="profileMenu">
+      <button *ngIf="!authService.isLoggedIn()" 
+              mat-stroked-button 
+              class="signin-btn" 
+              (click)="navigateToLogin()">
+        <mat-icon>login</mat-icon>
+        Sign In
+      </button>
+      <button *ngIf="authService.isLoggedIn()" 
+              mat-icon-button 
+              [matMenuTriggerFor]="profileMenu">
         <mat-icon>account_circle</mat-icon>
       </button>
       <mat-menu #profileMenu="matMenu">
@@ -41,7 +46,7 @@
           <mat-icon>favorite</mat-icon>
           <span>Saved Properties</span>
         </button>
-        <button mat-menu-item>
+        <button mat-menu-item (click)="navigateToListProperty()">
           <mat-icon>add</mat-icon>
           <span>List Property</span>
         </button>
@@ -50,7 +55,7 @@
           <mat-icon>settings</mat-icon>
           <span>Settings</span>
         </button>
-        <button mat-menu-item>
+        <button mat-menu-item (click)="logout()">
           <mat-icon>logout</mat-icon>
           <span>Sign Out</span>
         </button>
@@ -61,53 +66,48 @@
   <!-- Main Content Area -->
   <div class="main-content">
     <!-- Google Maps Container -->
-    <div #mapContainer class="map-container"></div>
+    <div #mapContainer class="map-container" 
+         [class.with-properties]="isListViewOpen"
+         [class.with-filters]="isFilterPanelOpen"></div>
 
     <!-- Filter Panel -->
-    <mat-sidenav-container class="sidenav-container" [class.panel-open]="isFilterPanelOpen">
-      <mat-sidenav #filterSidenav 
-                   mode="side" 
-                   position="end" 
-                   [opened]="isFilterPanelOpen"
-                   class="filter-panel">
-        <div class="filter-header">
-          <h3>Filters</h3>
-          <button mat-icon-button (click)="toggleFilterPanel()">
-            <mat-icon>close</mat-icon>
-          </button>
-        </div>
+    <div class="filter-panel" [class.open]="isFilterPanelOpen">
+      <div class="filter-header">
+        <h3>Filters</h3>
+        <button mat-icon-button (click)="toggleFilterPanel()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
 
-        <div class="filter-content" [formGroup]="filterForm">
-          <!-- Property Type -->
-          <mat-form-field appearance="outline">
-            <mat-label>Property Type</mat-label>
+      <div class="filter-content" [formGroup]="filterForm">
+        <!-- Property Type -->
+         <h3>Property Type</h3>
+         <div class="filter-section">
             <mat-select formControlName="propertyType">
               <mat-option *ngFor="let type of propertyTypes" [value]="type">
                 {{ type }}
               </mat-option>
             </mat-select>
-          </mat-form-field>
+         </div>
 
-          <!-- Price Range -->
-          <div class="filter-section">
-            <h4>Price Range</h4>
-            <div class="price-inputs">
-              <mat-form-field appearance="outline" class="price-field">
-                <mat-label>Min Price</mat-label>
-                <input matInput type="number" formControlName="minPrice">
-                <span matPrefix>$</span>
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="price-field">
-                <mat-label>Max Price</mat-label>
-                <input matInput type="number" formControlName="maxPrice">
-                <span matPrefix>$</span>
-              </mat-form-field>
-            </div>
+
+        <!-- Price Range -->
+        <h3>Price Range (Million HUF)</h3>
+        <div class="price-inputs">
+          <div class="price-container">
+            <input matInput type="number" formControlName="minPrice" placeholder="Min" step="0.1">
+            <span class="unit">M HUF</span>
           </div>
 
-          <!-- Bedrooms -->
-          <mat-form-field appearance="outline">
-            <mat-label>Min Bedrooms</mat-label>
+          <div class="price-container">
+            <input matInput type="number" formControlName="maxPrice" placeholder="Max" step="0.1">
+            <span class="unit">M HUF</span>
+          </div>
+        </div>
+
+        <!-- Bedrooms -->
+        <h3>Bedrooms</h3>
+        <div class="filter-section">
             <mat-select formControlName="bedrooms">
               <mat-option [value]="0">Any</mat-option>
               <mat-option [value]="1">1+</mat-option>
@@ -116,11 +116,11 @@
               <mat-option [value]="4">4+</mat-option>
               <mat-option [value]="5">5+</mat-option>
             </mat-select>
-          </mat-form-field>
+        </div>
 
-          <!-- Bathrooms -->
-          <mat-form-field appearance="outline">
-            <mat-label>Min Bathrooms</mat-label>
+        <!-- Bathrooms -->
+        <h3>Bathrooms</h3>
+        <div class="filter-section">
             <mat-select formControlName="bathrooms">
               <mat-option [value]="0">Any</mat-option>
               <mat-option [value]="1">1+</mat-option>
@@ -128,49 +128,43 @@
               <mat-option [value]="3">3+</mat-option>
               <mat-option [value]="4">4+</mat-option>
             </mat-select>
-          </mat-form-field>
+        </div>
 
-          <!-- Area Range -->
-          <div class="filter-section">
-            <h4>Square Footage</h4>
-            <div class="price-inputs">
-              <mat-form-field appearance="outline" class="price-field">
-                <mat-label>Min Sq Ft</mat-label>
-                <input matInput type="number" formControlName="minArea">
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="price-field">
-                <mat-label>Max Sq Ft</mat-label>
-                <input matInput type="number" formControlName="maxArea">
-              </mat-form-field>
+        <!-- Area Range -->
+        <h3>Area (Square Meters)</h3>
+          <div class="price-inputs">
+            <div class="price-container">
+              <input matInput type="number" formControlName="minArea" placeholder="Min">
+              <span matSuffix>m²</span>
+            </div>
+            <div class="price-container">
+              <input matInput type="number" formControlName="maxArea" placeholder="Max">
+              <span matSuffix>m²</span>
             </div>
           </div>
 
-
-          <!-- Filter Actions -->
-          <div class="filter-actions">
-            <button mat-stroked-button (click)="resetFilters()">
-              Reset All
-            </button>
-            <button mat-raised-button color="primary" (click)="toggleFilterPanel()">
-              Apply Filters ({{ filteredProperties.length }})
-            </button>
-          </div>
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+          <button mat-stroked-button (click)="resetFilters()" class="reset-btn">
+            Reset
+          </button>
+          <button mat-raised-button color="primary">
+            Apply ({{ filteredProperties.length }})
+          </button>
         </div>
-      </mat-sidenav>
+      </div>
+    </div>
 
-      <mat-sidenav-content class="map-content"></mat-sidenav-content>
-    </mat-sidenav-container>
-
-    <!-- List View Panel -->
-    <div class="list-panel" [class.open]="isListViewOpen">
-      <div class="list-header">
-        <h3>Properties ({{ filteredProperties.length }})</h3>
-        <button mat-icon-button (click)="toggleListView()">
-          <mat-icon>close</mat-icon>
-        </button>
+    <!-- Properties List Panel -->
+    <div class="properties-panel" [class.open]="isListViewOpen">
+      <div class="properties-header">
+          <h3>Properties ({{ filteredProperties.length }})</h3>
+            <button mat-icon-button (click)="toggleListView()" matTooltip="Lista bezárása">
+              <mat-icon>close</mat-icon>
+            </button>
       </div>
       
-      <div class="list-content">
+      <div class="properties-content">
         <mat-card *ngFor="let property of filteredProperties" 
                   class="property-card"
                   (click)="selectProperty(property)">
@@ -195,13 +189,42 @@
               </span>
               <span class="detail">
                 <mat-icon>square_foot</mat-icon>
-                {{ property.area || 'N/A' }} sq ft
+                {{ formatArea(property.area || 0) }}
               </span>
             </div>
           </mat-card-content>
         </mat-card>
+
+        <!-- Empty state -->
+        <div *ngIf="filteredProperties.length === 0" class="empty-state">
+          <mat-icon>home_work</mat-icon>
+          <h3>No results</h3>
+          <p>No property matches the specified filter criteria.</p>
+          <button mat-raised-button color="primary" (click)="resetFilters()">
+            Clear filters
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Toggle buttons for closed panels -->
+    <button *ngIf="!isFilterPanelOpen" 
+            mat-fab 
+            color="accent" 
+            class="toggle-filters-btn"
+            (click)="toggleFilterPanel()"
+            matTooltip="Open Filters">
+      <mat-icon>tune</mat-icon>
+    </button><button *ngIf="!isListViewOpen" 
+            mat-fab 
+            color="accent" 
+            class="toggle-properties-btn"
+            (click)="toggleListView()"
+            [matBadge]="filteredProperties.length"
+            matBadgeColor="warn"
+            matTooltip="List of properties">
+      <mat-icon>list</mat-icon>
+    </button>
 
     <!-- Property Details Modal -->
     <div class="property-modal" *ngIf="selectedProperty" (click)="closePropertyDetails()">
@@ -237,7 +260,7 @@
             </div>
             <div class="detail-item">
               <mat-icon>square_foot</mat-icon>
-              <span>{{ selectedProperty.area || 'N/A' }} sq ft</span>
+              <span>{{ formatArea(selectedProperty.area || 0) }}</span>
             </div>
             <div class="detail-item">
               <mat-icon>home</mat-icon>
@@ -258,15 +281,12 @@
               <mat-icon>schedule</mat-icon>
               Schedule Viewing
             </button>
-            <button mat-raised-button color="accent">
-              <mat-icon>gavel</mat-icon>
-              Place Bid
+            <button mat-raised-button color="primary">
+              <mat-icon>phone</mat-icon>
+              Contact Agent
             </button>
             <button mat-icon-button>
               <mat-icon>favorite_border</mat-icon>
-            </button>
-            <button mat-icon-button>
-              <mat-icon>share</mat-icon>
             </button>
           </div>
         </mat-card-content>
