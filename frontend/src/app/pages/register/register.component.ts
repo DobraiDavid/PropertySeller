@@ -96,7 +96,6 @@ onSubmit() {
 
     this.authService.register(formValue).subscribe({
       next: (res) => {
-        console.log('Registered successfully:', res);
 
         // Automatically log in after registration
         this.authService.login({

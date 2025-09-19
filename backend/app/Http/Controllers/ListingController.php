@@ -13,10 +13,28 @@ class ListingController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $listing = Listing::create($request->all());
-        return response()->json($listing, 201);
-    }
+        {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'type' => 'required|string',
+                'price' => 'required|numeric',
+                'area' => 'required|numeric',
+                'bedrooms' => 'nullable|integer',
+                'bathrooms' => 'nullable|integer',
+                'address' => 'required|string|max:255',
+                'city' => 'required|string|max:255',
+                'phoneNumber' => 'nullable|string|max:20',
+                'email' => 'nullable|email|max:255',
+                'images' => 'nullable|array',
+            ]);
+
+            $validated['user_id'] = auth()->id();
+
+            $listing = Listing::create($validated);
+
+            return response()->json($listing, 201);
+        }
 
     public function show($id)
     {

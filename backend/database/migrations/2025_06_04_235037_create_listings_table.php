@@ -26,7 +26,7 @@ return new class extends Migration
             $table->integer('bathrooms')->nullable();
             $table->decimal('lat', 10, 7)->nullable();
             $table->decimal('lng', 10, 7)->nullable();
-            $table->integer('phoneNumber');
+            $table->string('phoneNumber');
             $table->string('email');
             $table->timestamps();
         });
