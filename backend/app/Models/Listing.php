@@ -7,7 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 class Listing extends Model
 {
     protected $fillable = [
-        'user_id', 'title', 'description', 'price', 'address', 'city', 'image'
+        'user_id', 'title', 'description', 'price', 'area', 'address', 'city',
+        'images', 'type', 'bedrooms', 'bathrooms', 'lat', 'lng'
+    ];
+
+    protected $casts = [
+        'images' => 'array',
     ];
 
     public function user()

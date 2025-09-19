@@ -15,11 +15,17 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->string('title');
-            $table->text('description');
-            $table->decimal('price', 10, 2);
+            $table->text('description')->nullable();
+            $table->decimal('price', 12, 2);
+            $table->integer('area');
             $table->string('address');
             $table->string('city');
-            $table->string('image')->nullable();
+            $table->json('images')->nullable();
+            $table->string('type')->nullable();
+            $table->integer('bedrooms')->nullable();
+            $table->integer('bathrooms')->nullable();
+            $table->decimal('lat', 10, 7)->nullable();
+            $table->decimal('lng', 10, 7)->nullable();
             $table->timestamps();
         });
     }

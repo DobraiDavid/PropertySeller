@@ -12,18 +12,17 @@
     </div>
 
     <div class="nav-center">
-      <div class="nav-center" [formGroup]="filterForm">
+      <div [formGroup]="filterForm">
         <mat-form-field appearance="outline" class="search-field">
-            <mat-icon matPrefix>search</mat-icon>
-            <input matInput 
-                formControlName="searchQuery"
-                placeholder="Search by location, property name...">
-
-            <button mat-icon-button matSuffix *ngIf="filterForm.get('searchQuery')?.value" (click)="filterForm.get('searchQuery')?.setValue('')">
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput 
+          formControlName="searchQuery"
+          placeholder="Search by location, property name...">
+          <button mat-icon-button matSuffix *ngIf="filterForm.get('searchQuery')?.value" (click)="filterForm.get('searchQuery')?.setValue('')">
             <mat-icon>clear</mat-icon>
-            </button>
+          </button>
         </mat-form-field>
-      </div> 
+      </div>
     </div>
 
     <div class="nav-right">
@@ -146,16 +145,6 @@
             </div>
           </div>
 
-          <!-- Additional Filters -->
-          <div class="filter-section">
-            <h4>Additional Features</h4>
-            <mat-checkbox formControlName="hasVirtualTour">
-              Virtual Tour Available
-            </mat-checkbox>
-            <mat-checkbox formControlName="newListings">
-              New Listings Only
-            </mat-checkbox>
-          </div>
 
           <!-- Filter Actions -->
           <div class="filter-actions">
@@ -188,10 +177,7 @@
           <div class="property-image">
             <img [src]="property.image" [alt]="property.title">
             <div class="property-badges">
-              <span class="badge new" *ngIf="property.isNew">New</span>
-              <span class="badge tour" *ngIf="property.hasVirtualTour">
-                <mat-icon>videocam</mat-icon>
-              </span>
+              <span class="badge type">{{ property.type }}</span>
             </div>
           </div>
           <mat-card-content class="property-info">
@@ -201,15 +187,15 @@
             <div class="property-details">
               <span class="detail">
                 <mat-icon>bed</mat-icon>
-                {{ property.bedrooms }}
+                {{ property.bedrooms || 0 }}
               </span>
               <span class="detail">
                 <mat-icon>bathtub</mat-icon>
-                {{ property.bathrooms }}
+                {{ property.bathrooms || 0 }}
               </span>
               <span class="detail">
                 <mat-icon>square_foot</mat-icon>
-                {{ property.area }} sq ft
+                {{ property.area || 'N/A' }} sq ft
               </span>
             </div>
           </mat-card-content>
@@ -227,32 +213,43 @@
         <div class="property-image-large">
           <img [src]="selectedProperty.image" [alt]="selectedProperty.title">
           <div class="property-badges">
-            <span class="badge new" *ngIf="selectedProperty.isNew">New Listing</span>
-            <span class="badge tour" *ngIf="selectedProperty.hasVirtualTour">Virtual Tour</span>
+            <span class="badge type">{{ selectedProperty.type }}</span>
           </div>
         </div>
 
         <mat-card-content>
           <h2>{{ selectedProperty.title }}</h2>
           <p class="price-large">{{ formatPrice(selectedProperty.price) }}</p>
-          <p class="address">{{ selectedProperty.address }}</p>
+          <p class="address">{{ selectedProperty.address }}, {{ selectedProperty.city }}</p>
+          
+          <div class="description" *ngIf="selectedProperty.description">
+            <p>{{ selectedProperty.description }}</p>
+          </div>
           
           <div class="details-grid">
             <div class="detail-item">
               <mat-icon>bed</mat-icon>
-              <span>{{ selectedProperty.bedrooms }} Bedrooms</span>
+              <span>{{ selectedProperty.bedrooms || 0 }} Bedrooms</span>
             </div>
             <div class="detail-item">
               <mat-icon>bathtub</mat-icon>
-              <span>{{ selectedProperty.bathrooms }} Bathrooms</span>
+              <span>{{ selectedProperty.bathrooms || 0 }} Bathrooms</span>
             </div>
             <div class="detail-item">
               <mat-icon>square_foot</mat-icon>
-              <span>{{ selectedProperty.area }} sq ft</span>
+              <span>{{ selectedProperty.area || 'N/A' }} sq ft</span>
             </div>
             <div class="detail-item">
               <mat-icon>home</mat-icon>
               <span>{{ selectedProperty.type }}</span>
+            </div>
+            <div class="detail-item">
+              <mat-icon>location_city</mat-icon>
+              <span>{{ selectedProperty.city }}</span>
+            </div>
+            <div class="detail-item">
+              <mat-icon>calendar_today</mat-icon>
+              <span>Listed {{ selectedProperty.created_at | date:'shortDate' }}</span>
             </div>
           </div>
 
