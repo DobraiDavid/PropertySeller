@@ -22,11 +22,13 @@ import { environment } from '../../../environments/environment';
 import { ListingService, Listing } from '../../services/listing.service';
 import { Loader } from '@googlemaps/js-api-loader';
 import { AuthService } from '../../services/auth.service';
+import { LikeService } from '../../services/like.service';
 
 declare const google: any;
 
 interface Property extends Listing {
   image: string; 
+  images?: string[];  
 }
 
 @Component({
@@ -63,6 +65,11 @@ export class HomeComponent implements OnInit {
   filterForm: FormGroup;
   isFilterPanelOpen = true; 
   isListViewOpen = true; 
+  showEmail = false;
+  showPhone = false;
+  currentImageIndex: number = 0;
+  galleryDirection: 'horizontal' | 'vertical' = 'horizontal';
+  likedListings: Set<number> = new Set();
   selectedProperty: Property | null = null;
 
   properties: Property[] = [];
@@ -73,6 +80,7 @@ export class HomeComponent implements OnInit {
     public authService: AuthService,
     private fb: FormBuilder, 
     private listingService: ListingService,
+    private likeService: LikeService, 
     private router: Router
   ) {
     this.filterForm = this.fb.group({
@@ -90,6 +98,13 @@ export class HomeComponent implements OnInit {
   ngOnInit() {
     this.setupFilterSubscription();
     this.fetchListings();
+    if (window.innerWidth <= 968) {
+      this.isFilterPanelOpen = false;
+      this.isListViewOpen = false;
+    }
+    if (this.authService.isLoggedIn()) {
+      this.loadLikedListings();
+    }
   }
 
   fetchListings() {
@@ -172,6 +187,25 @@ export class HomeComponent implements OnInit {
     });
   }
 
+  nextImage() {
+  if (this.selectedProperty && this.selectedProperty.images) {
+    this.currentImageIndex = 
+      (this.currentImageIndex + 1) % this.selectedProperty.images.length;
+    }
+  }
+
+  prevImage() {
+    if (this.selectedProperty && this.selectedProperty.images) {
+      this.currentImageIndex = 
+        (this.currentImageIndex - 1 + this.selectedProperty.images.length) % 
+        this.selectedProperty.images.length;
+    }
+  }
+
+  selectImage(index: number) {
+    this.currentImageIndex = index;
+  }
+
   clearMarkers() {
     this.markers.forEach(marker => marker.setMap(null));
     this.markers = [];
@@ -189,14 +223,59 @@ export class HomeComponent implements OnInit {
     });
   }
 
+   toggleLike(property: Property, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/login']);
+      return;
+    }
+    
+    const wasLiked = this.likedListings.has(property.id);
+    
+    if (wasLiked) {
+      this.likedListings.delete(property.id);
+    } else {
+      this.likedListings.add(property.id);
+    }
+    
+    this.likeService.toggleLike(property.id).subscribe({
+      error: (error) => {
+        console.error('Error toggling like:', error);
+        if (wasLiked) {
+          this.likedListings.add(property.id);
+        } else {
+          this.likedListings.delete(property.id);
+        }
+      }
+    });
+  }
+
+  isLiked(propertyId: number): boolean {
+    return this.likedListings.has(propertyId);
+  }
+
+  loadLikedListings() {
+    this.likeService.getLikedListings().subscribe({
+      next: (listings) => {
+        this.likedListings = new Set(listings.map(l => l.id));
+      },
+      error: (error) => {
+        console.error('Error loading liked listings:', error);
+      }
+    });
+  }
+
   ngAfterViewInit() {
   this.loadGoogleMaps();
   setTimeout(() => {
     if (typeof google !== 'undefined' && !this.map) {
       this.initializeMap();
-    }
-  }, 200);
-}
+      }
+    }, 200);
+  }
 
   applyFilters() {
     const filters = this.filterForm.value;
@@ -234,6 +313,16 @@ export class HomeComponent implements OnInit {
     this.addPropertyMarkers();
   }
 
+  revealEmail() {
+    this.showEmail = !this.showEmail;
+    this.showPhone = false;
+  }
+
+  revealPhone() {
+    this.showPhone = !this.showPhone;
+    this.showEmail = false;
+  }
+
   toggleFilterPanel() { 
     this.isFilterPanelOpen = !this.isFilterPanelOpen; 
   }
@@ -244,6 +333,7 @@ export class HomeComponent implements OnInit {
 
   selectProperty(property: Property) {
     this.selectedProperty = property;
+    this.currentImageIndex = 0;
     if (property.lat && property.lng) {
       this.map.setCenter({ lat: property.lat, lng: property.lng });
       this.map.setZoom(16);
@@ -273,6 +363,9 @@ export class HomeComponent implements OnInit {
 
   closePropertyDetails() { 
     this.selectedProperty = null; 
+    this.showEmail = false;
+    this.showPhone = false;
+    this.currentImageIndex = 0;
   }
 
   navigateToLogin() {

@@ -1,0 +1,59 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+export interface Listing {
+  id: number;
+  title: string;
+  description: string;
+  price: string;
+  area: number;
+  address: string;
+  city: string;
+  images?: string[];
+  type?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  lat?: number;
+  lng?: number;
+  phoneNumber?: string;
+  email?: string;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class LikeService {
+
+  private apiUrl = 'http://127.0.0.1:8000/api';
+
+  constructor(private http: HttpClient) {}
+
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+  }
+
+  // Toggle like/unlike a listing
+  toggleLike(listingId: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/listings/${listingId}/like`, {}, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  // Get all listings liked by the logged-in user
+  getLikedListings(): Observable<Listing[]> {
+    return this.http.get<Listing[]>(`${this.apiUrl}/users/liked-listings`, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  // Get the number of users who liked a listing
+  getLikesCount(listingId: number): Observable<{ likes: number }> {
+    return this.http.get<{ likes: number }>(`${this.apiUrl}/listings/${listingId}/likes-count`, {
+      headers: this.getAuthHeaders()
+    });
+  }
+}

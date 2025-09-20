@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ListingController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\ListingLikeController;
 
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
@@ -24,4 +25,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
+
+    Route::post('/listings/{id}/like', [ListingLikeController::class, 'toggle']);
+    Route::get('/users/liked-listings', [ListingLikeController::class, 'likedListings']);
+    Route::get('/listings/{id}/likes-count', [ListingLikeController::class, 'likeCount']);
 });

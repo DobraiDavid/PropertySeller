@@ -19,4 +19,10 @@ class Listing extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function likedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'listing_user_likes')
+                    ->withTimestamps();
+    }
 }
