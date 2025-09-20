@@ -27,6 +27,8 @@ class ListingController extends Controller
                 'phoneNumber' => 'nullable|string|max:20',
                 'email' => 'nullable|email|max:255',
                 'images' => 'nullable|array',
+                'lat' => 'numeric',
+                'lng' => 'numeric',
             ]);
 
             $validated['user_id'] = auth()->id();

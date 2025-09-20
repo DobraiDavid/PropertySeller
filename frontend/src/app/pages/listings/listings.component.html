@@ -127,18 +127,6 @@
             </h3>
             
             <mat-form-field appearance="outline" class="form-field">
-              <mat-label>Address</mat-label>
-              <input matInput
-                     formControlName="address"
-                     placeholder="Enter full address"
-                     autocomplete="street-address">
-              <mat-icon matSuffix>home</mat-icon>
-              <mat-error *ngIf="listingForm.get('address')?.invalid && listingForm.get('address')?.touched">
-                {{ getErrorMessage('address') }}
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="form-field">
               <mat-label>City</mat-label>
               <input matInput
                      formControlName="city"
@@ -149,6 +137,19 @@
                 {{ getErrorMessage('city') }}
               </mat-error>
             </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Address</mat-label>
+              <input matInput
+                     formControlName="address"
+                     placeholder="Enter full address"
+                     autocomplete="street-address">
+              <mat-icon matSuffix>home</mat-icon>
+              <mat-error *ngIf="listingForm.get('address')?.invalid && listingForm.get('address')?.touched">
+                {{ getErrorMessage('address') }}
+              </mat-error>
+            </mat-form-field>
+            <div id="map" style="height: 300px; border-radius: 8px; margin: 10px 0;"></div>
           </div>
 
           <!-- Contact Information Section -->

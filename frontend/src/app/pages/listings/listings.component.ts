@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -11,6 +11,15 @@ import { MatSelectModule } from '@angular/material/select';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { CommonModule } from '@angular/common';
+import * as L from 'leaflet';
+import { HttpClient } from '@angular/common/http';
+import { debounceTime, distinctUntilChanged, combineLatest } from 'rxjs';
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: '../assets/leaflet/marker-icon-2x.png',
+  iconUrl: '../assets/leaflet/marker-icon.png',
+  shadowUrl: '../assets/leaflet/marker-shadow.png'
+});
 
 @Component({
   selector: 'app-listings',
@@ -28,12 +37,15 @@ import { CommonModule } from '@angular/common';
   templateUrl: './listings.component.html',
   styleUrls: ['./listings.component.scss']
 })
-export class ListingsComponent implements OnInit {
+export class ListingsComponent implements OnInit, AfterViewInit {
   listingForm: FormGroup;
   isLoading = false;
   selectedImages: File[] = [];
   imagePreviewUrls: string[] = [];
   maxImages = 10;
+  
+  private map!: L.Map;
+  private marker!: L.Marker;
 
   propertyTypes = [
     { value: 'house', label: 'House' },
@@ -47,7 +59,8 @@ export class ListingsComponent implements OnInit {
     private fb: FormBuilder,
     private listingService: ListingService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private http: HttpClient 
   ) {
     this.listingForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
@@ -60,11 +73,86 @@ export class ListingsComponent implements OnInit {
       address: ['', [Validators.required, Validators.minLength(5)]],
       city: ['', [Validators.required, Validators.minLength(2)]],
       phoneNumber: ['', [Validators.pattern(/^\+?\d{10,15}$/)]],
-      email: ['', [Validators.email]]
+      email: ['', [Validators.email]],
+      lat: [null, Validators.required],
+      lng: [null, Validators.required] 
+    });
+  }
+  
+
+  ngOnInit(): void {
+    const address$ = this.listingForm.get('address')!.valueChanges.pipe(
+      debounceTime(500),
+      distinctUntilChanged()
+    );
+
+    const city$ = this.listingForm.get('city')!.valueChanges.pipe(
+      debounceTime(500),
+      distinctUntilChanged()
+    );
+
+    // ✅ Combine address + city
+    combineLatest([address$, city$]).subscribe(([address, city]) => {
+      this.tryGeocode(address, city);
     });
   }
 
-  ngOnInit(): void {}
+  ngAfterViewInit(): void {
+    this.initMap();
+  }
+
+ private initMap(): void {
+    this.map = L.map('map').setView([47.956967, 21.715700], 13); 
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(this.map);
+
+    this.map.on('click', (e: L.LeafletMouseEvent) => {
+      this.setMarker(e.latlng.lat, e.latlng.lng);
+    });
+  }
+
+  private setMarker(lat: number, lng: number): void {
+    if (this.marker) {
+      this.marker.setLatLng([lat, lng]);
+    } else {
+      this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
+      this.marker.on('dragend', () => {
+        const pos = this.marker.getLatLng();
+        this.updateCoordinates(pos.lat, pos.lng);
+      });
+    }
+    this.map.setView([lat, lng], 15);
+    this.updateCoordinates(lat, lng);
+  }
+
+  private updateCoordinates(lat: number, lng: number): void {
+    this.listingForm.patchValue({ lat, lng });
+  }
+
+  private tryGeocode(address?: string, city?: string): void {
+    if (!address && !city) return;
+
+    const query = `${address || ''} ${city || ''}`.trim();
+    if (!query) return;
+
+    this.http
+      .get<any[]>(`https://nominatim.openstreetmap.org/search`, {
+        params: {
+          q: query,
+          format: 'json',
+          limit: '1'
+        }
+      })
+      .subscribe((results) => {
+        if (results.length > 0) {
+          const lat = parseFloat(results[0].lat);
+          const lng = parseFloat(results[0].lon);
+          this.setMarker(lat, lng);
+        }
+      });
+  }
 
   onImageSelect(event: any): void {
     const files = Array.from(event.target.files) as File[];
@@ -146,7 +234,7 @@ export class ListingsComponent implements OnInit {
       
       const formData = this.listingForm.value;
 
-      if (formData.price) formData.price = Number(formData.price);
+      if (formData.price) formData.price = Number(formData.price) * 1000000;
       if (formData.area) formData.area = Number(formData.area);
       if (formData.bedrooms) formData.bedrooms = Number(formData.bedrooms);
       if (formData.bathrooms) formData.bathrooms = Number(formData.bathrooms);
