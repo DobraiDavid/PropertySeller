@@ -1,24 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-
-export interface Listing {
-  id: number;
-  title: string;
-  description: string;
-  price: string;
-  area: number;
-  address: string;
-  city: string;
-  images?: string[];
-  type?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  lat?: number;
-  lng?: number;
-  phoneNumber?: string;
-  email?: string;
-}
+import { Listing } from './listing.service';
 
 @Injectable({
   providedIn: 'root'

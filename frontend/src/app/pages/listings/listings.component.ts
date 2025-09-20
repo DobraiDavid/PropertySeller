@@ -14,6 +14,7 @@ import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
 import { HttpClient } from '@angular/common/http';
 import { debounceTime, distinctUntilChanged, combineLatest } from 'rxjs';
+import { RouterModule } from '@angular/router';
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: '../assets/leaflet/marker-icon-2x.png',
@@ -32,7 +33,8 @@ L.Icon.Default.mergeOptions({
     MatSelectModule,
     ReactiveFormsModule,
     MatCardModule,    
-    CommonModule,         
+    CommonModule,  
+    RouterModule,       
   ],
   templateUrl: './listings.component.html',
   styleUrls: ['./listings.component.scss']

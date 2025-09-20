@@ -52,6 +52,16 @@ export class AuthService {
     });
   }
 
+  //Update user info
+  updateProfile(data: any): Observable<any> {
+    const token = localStorage.getItem('token');
+    return this.http.put(`${this.apiUrl}/user/edit`, data, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  }
+
   // Check if user is logged in
   isLoggedIn(): boolean {
     return !!localStorage.getItem('token');

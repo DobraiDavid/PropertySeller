@@ -38,6 +38,10 @@
   justify-content: center;
   gap: 12px;
   margin-bottom: 16px;
+
+  h1{
+    cursor: pointer;
+  }
 }
 
 .logo-icon {
@@ -47,6 +51,7 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  cursor: pointer;
 }
 
 .header h1 {

@@ -57,7 +57,11 @@ export class ListingService {
   }
 
   // Delete a listing
-  deleteListing(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  deleteListing(listingId: number): Observable<any> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+  return this.http.delete(`${this.apiUrl}/${listingId}`, { headers })
   }
 }

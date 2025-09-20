@@ -17,12 +17,13 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { ListingService, Listing } from '../../services/listing.service';
 import { Loader } from '@googlemaps/js-api-loader';
 import { AuthService } from '../../services/auth.service';
 import { LikeService } from '../../services/like.service';
+import { RouterModule } from '@angular/router';
 
 declare const google: any;
 
@@ -52,7 +53,8 @@ interface Property extends Listing {
     MatMenuModule,
     MatBottomSheetModule,
     MatListModule,
-    MatDividerModule
+    MatDividerModule,
+    RouterModule,
   ],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
@@ -67,6 +69,7 @@ export class HomeComponent implements OnInit {
   isListViewOpen = true; 
   showEmail = false;
   showPhone = false;
+  selectedPropertyIdToSelect?: number;
   currentImageIndex: number = 0;
   galleryDirection: 'horizontal' | 'vertical' = 'horizontal';
   likedListings: Set<number> = new Set();
@@ -98,6 +101,12 @@ export class HomeComponent implements OnInit {
   ngOnInit() {
     this.setupFilterSubscription();
     this.fetchListings();
+
+    const state = history.state as { selectedPropertyId?: number };
+    if (state?.selectedPropertyId) {
+      this.selectedPropertyIdToSelect = state.selectedPropertyId;
+    }
+
     if (window.innerWidth <= 968) {
       this.isFilterPanelOpen = false;
       this.isListViewOpen = false;
@@ -115,12 +124,20 @@ export class HomeComponent implements OnInit {
         lng: l.lng ? Number(l.lng) : 0,
         price: l.price ? l.price / 1000000 : 0,
         area: l.area || 0,
-        image: Array.isArray(l.images) && l.images.length > 0 
-          ? l.images[0] 
+        image: Array.isArray(l.images) && l.images.length > 0
+          ? l.images[0]
           : 'https://via.placeholder.com/400'
       }));
+
+      // Apply filters and markers
       this.filteredProperties = [...this.properties];
       this.addPropertyMarkers();
+
+      // Select property if navigation requested it
+    if (this.selectedPropertyIdToSelect) {
+      this.selectPropertyById(this.selectedPropertyIdToSelect);
+      this.selectedPropertyIdToSelect = undefined;
+    }
     });
   }
   
@@ -337,6 +354,41 @@ export class HomeComponent implements OnInit {
     if (property.lat && property.lng) {
       this.map.setCenter({ lat: property.lat, lng: property.lng });
       this.map.setZoom(16);
+    }
+  }
+
+  private setupNavigationListener() {
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        const navigation = this.router.getCurrentNavigation();
+        const state = navigation?.extras.state as { selectedPropertyId?: number };
+
+        if (state?.selectedPropertyId) {
+          if (this.properties.length > 0) {
+            this.selectPropertyById(state.selectedPropertyId);
+          } else {
+            // Store ID to select after listings are loaded
+            this.selectedPropertyIdToSelect = state.selectedPropertyId;
+          }
+        }
+      }
+    });
+  }
+
+selectPropertyById(propertyId: number) {
+  if (!this.properties || this.properties.length === 0) {
+    // Wait until listings are loaded
+    this.listingService.getListings().subscribe(() => {
+      this.selectPropertyById(propertyId);
+    });
+    return;
+  }
+
+  const property = this.properties.find(p => p.id === propertyId);
+  if (property) {
+    this.selectProperty(property);
+  } else {
+    console.warn(`Property with id ${propertyId} not found`);
     }
   }
 

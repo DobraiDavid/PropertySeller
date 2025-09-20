@@ -1,0 +1,306 @@
+<div class="profile-container">
+  <div class="profile-wrapper">
+    
+    <!-- Header Section -->
+    <div class="profile-header">
+      <div class="header-content">
+        <div class="logo-section">
+          <mat-icon class="logo-icon" routerLink="/">home</mat-icon>
+          <h1 routerLink="/">EstateHub</h1>
+        </div>
+        <div class="user-info">
+          <div class="avatar">
+            <mat-icon>account_circle</mat-icon>
+          </div>
+          <div class="user-details">
+            <h2>{{ user.name }}</h2>
+            <p>{{ user.email }}</p>
+          </div>
+          <button mat-icon-button class="logout-btn" (click)="onLogout()" matTooltip="Logout">
+            <mat-icon>logout</mat-icon>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Stats Cards -->
+      <div class="stats-section">
+        <div class="stat-card">
+          <mat-icon>home_work</mat-icon>
+          <div class="stat-content">
+            <span class="stat-number">{{ totalListings }}</span>
+            <span class="stat-label">Properties Listed</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <mat-icon>favorite</mat-icon>
+          <div class="stat-content">
+            <span class="stat-number">{{ totalLikes }}</span>
+            <span class="stat-label">Total Likes</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <mat-icon>bookmark</mat-icon>
+          <div class="stat-content">
+            <span class="stat-number">{{ likedListings.length }}</span>
+            <span class="stat-label">Saved Properties</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <mat-card class="main-content">
+      <mat-tab-group [selectedIndex]="activeTab === 'profile' ? 0 : activeTab === 'security' ? 1 : 2"
+                     (selectedIndexChange)="onTabChange($event)">
+        
+        <!-- Profile Settings Tab -->
+        <mat-tab label="Profile Settings">
+          <div class="tab-content">
+            <div class="section-header">
+              <h3>Personal Information</h3>
+              <button mat-raised-button 
+                      class="gradient-button"
+                      *ngIf="!isEditingProfile"
+                      (click)="onEditProfile()">
+                <mat-icon>edit</mat-icon>
+                Edit Profile
+              </button>
+            </div>
+
+            <form [formGroup]="profileForm" (ngSubmit)="onSaveProfile()" class="profile-form">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Full Name</mat-label>
+                  <input matInput
+                         formControlName="name"
+                         [readonly]="!isEditingProfile"
+                         placeholder="Enter your full name">
+                  <mat-icon matSuffix>person</mat-icon>
+                  <mat-error *ngIf="profileForm.get('name')?.invalid && profileForm.get('name')?.touched">
+                    {{ getErrorMessage('name') }}
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Email Address</mat-label>
+                  <input matInput
+                         formControlName="email"
+                         [readonly]="!isEditingProfile"
+                         type="email"
+                         placeholder="Enter your email">
+                  <mat-icon matSuffix>email</mat-icon>
+                  <mat-error *ngIf="profileForm.get('email')?.invalid && profileForm.get('email')?.touched">
+                    {{ getErrorMessage('email') }}
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <!-- Password Change Section -->
+              <div *ngIf="isEditingProfile" class="password-section">
+                <h4>Change Password</h4>
+                <p class="password-note">Leave blank if you don't want to change your password</p>
+                
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Current Password</mat-label>
+                    <input matInput
+                           formControlName="currentPassword"
+                           [type]="hideCurrentPassword ? 'password' : 'text'"
+                           placeholder="Enter current password">
+                    <button mat-icon-button
+                            matSuffix
+                            type="button"
+                            (click)="hideCurrentPassword = !hideCurrentPassword"
+                            class="visibility-toggle">
+                      <mat-icon>{{hideCurrentPassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+                    </button>
+                    <mat-error *ngIf="profileForm.get('currentPassword')?.invalid && profileForm.get('currentPassword')?.touched">
+                      {{ getErrorMessage('currentPassword') }}
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>New Password</mat-label>
+                    <input matInput
+                           formControlName="newPassword"
+                           [type]="hideNewPassword ? 'password' : 'text'"
+                           placeholder="Enter new password">
+                    <button mat-icon-button
+                            matSuffix
+                            type="button"
+                            (click)="hideNewPassword = !hideNewPassword"
+                            class="visibility-toggle">
+                      <mat-icon>{{hideNewPassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+                    </button>
+                    <mat-error *ngIf="profileForm.get('newPassword')?.invalid && profileForm.get('newPassword')?.touched">
+                      {{ getErrorMessage('newPassword') }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Confirm New Password</mat-label>
+                    <input matInput
+                           formControlName="confirmPassword"
+                           [type]="hideConfirmPassword ? 'password' : 'text'"
+                           placeholder="Confirm new password">
+                    <button mat-icon-button
+                            matSuffix
+                            type="button"
+                            (click)="hideConfirmPassword = !hideConfirmPassword"
+                            class="visibility-toggle">
+                      <mat-icon>{{hideConfirmPassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+                    </button>
+                    <mat-error *ngIf="profileForm.get('confirmPassword')?.invalid && profileForm.get('confirmPassword')?.touched">
+                      {{ getErrorMessage('confirmPassword') }}
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div *ngIf="isEditingProfile" class="action-buttons">
+                <button mat-button
+                        type="button"
+                        (click)="onCancelEdit()"
+                        class="cancel-btn">
+                  Cancel
+                </button>
+                <button mat-raised-button
+                        color="primary"
+                        type="submit"
+                        class="save-btn"
+                        [disabled]="isLoading">
+                  <div class="button-content">
+                    <span *ngIf="!isLoading">Save Changes</span>
+                    <mat-spinner *ngIf="isLoading" diameter="20" class="button-spinner"></mat-spinner>
+                    <span *ngIf="isLoading">Saving...</span>
+                  </div>
+                </button>
+              </div>
+            </form>
+          </div>
+        </mat-tab>
+
+        <!-- My Listings Tab -->
+        <mat-tab label="My Properties">
+          <div class="tab-content">
+            <div class="section-header">
+              <h3>Your Property Listings</h3>
+              <button mat-raised-button class="gradient-button"  id="add" routerLink="/list">
+                <mat-icon>add</mat-icon>
+                Add New Property
+              </button>
+            </div>
+
+            <div *ngIf="userListings.length === 0" class="empty-state">
+              <mat-icon>home_work</mat-icon>
+              <h4>No Properties Listed</h4>
+              <p>Start by adding your first property listing</p>
+            </div>
+
+            <div *ngIf="userListings.length > 0" class="listings-grid">
+              <mat-card *ngFor="let listing of userListings" class="listing-card">
+                <div class="listing-image">
+                  <img [src]="listing.images?.[0] || '/assets/placeholder-house.jpg'" 
+                       [alt]="listing.title">
+                  <div class="listing-actions">
+                    <button mat-icon-button (click)="onEditListing(listing.id)" matTooltip="Edit">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="onDeleteListing(listing)" 
+                            color="warn" matTooltip="Delete">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </div>
+                
+                <mat-card-content class="listing-content">
+                  <h4>{{ listing.title }}</h4>
+                  <p class="listing-address">
+                    <mat-icon>location_on</mat-icon>
+                    {{ listing.address }}, {{ listing.city }}
+                  </p>
+                  <div class="listing-details">
+                    <span class="price">${{ listing.price | number }}</span>
+                    <span class="area">{{ listing.area }}m²</span>
+                  </div>
+                  <div class="listing-stats">
+                    <span class="stat">
+                      <mat-icon>favorite</mat-icon>
+                        <span *ngIf="!likesLoading[listing.id]">{{ listingLikes[listing.id] || 0 }} likes</span>
+                        <span *ngIf="likesLoading[listing.id]">Loading...</span>
+                    </span>
+                  </div>
+                </mat-card-content>
+
+                <mat-card-actions>
+                  <button mat-button class="view-details-btn" (click)="onViewListing(listing.id)">
+                    <mat-icon>visibility</mat-icon>
+                    View Details
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Liked Properties Tab -->
+        <mat-tab label="Saved Properties">
+          <div class="tab-content">
+            <div class="section-header">
+              <h3>Your Saved Properties</h3>
+              <span class="count-badge">{{ likedListings.length }} properties</span>
+            </div>
+
+            <div *ngIf="likedListings.length === 0" class="empty-state">
+              <mat-icon>favorite_border</mat-icon>
+              <h4>No Saved Properties</h4>
+              <p>Properties you like will appear here</p>
+              <button mat-raised-button class="gradient-button" routerLink="/">
+                <mat-icon>search</mat-icon>
+                Browse Properties
+              </button>
+            </div>
+
+            <div *ngIf="likedListings.length > 0" class="listings-grid">
+              <mat-card *ngFor="let listing of likedListings" class="listing-card liked-card">
+                <div class="listing-image">
+                  <img [src]="listing.images?.[0] || '/assets/placeholder-house.jpg'" 
+                       [alt]="listing.title">
+                  <button mat-icon-button 
+                          class="like-btn active" 
+                          (click)="onToggleLike(listing)"
+                          matTooltip="Remove from favorites">
+                    <mat-icon>favorite</mat-icon>
+                  </button>
+                </div>
+                
+                <mat-card-content class="listing-content">
+                  <h4>{{ listing.title }}</h4>
+                  <p class="listing-address">
+                    <mat-icon>location_on</mat-icon>
+                    {{ listing.address }}, {{ listing.city }}
+                  </p>
+                  <div class="listing-details">
+                    <span class="price">${{ listing.price | number }}</span>
+                    <span class="area">{{ listing.area }}m²</span>
+                  </div>
+                  <p class="listing-description">{{ listing.description }}</p>
+                </mat-card-content>
+
+                <mat-card-actions>
+                  <button mat-button class="view-details-btn" (click)="onViewListing(listing.id)">
+                    <mat-icon>visibility</mat-icon>
+                    View Details
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card>
+  </div>
+</div>

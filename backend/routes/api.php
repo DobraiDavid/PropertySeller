@@ -23,7 +23,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-
+    Route::put('/user/edit', [\App\Http\Controllers\Auth\UserController::class, 'update']);
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
 
     Route::post('/listings/{id}/like', [ListingLikeController::class, 'toggle']);
