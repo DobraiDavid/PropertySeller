@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../../services/auth.service';
 import { ListingService, Listing } from '../../services/listing.service';
@@ -18,6 +17,8 @@ import { RouterModule } from '@angular/router';
 import { Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { ActivatedRoute } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-confirm-dialog',
@@ -88,7 +89,7 @@ export class ConfirmDialogComponent {
     MatInputModule,
     RouterModule,
     MatDialogModule,
-    MatButtonModule
+    MatButtonModule,
   ],
   styleUrls: ['./profile.component.scss']
 })
@@ -118,9 +119,10 @@ export class ProfileComponent implements OnInit {
     private authService: AuthService,
     private listingService: ListingService,
     private likeService: LikeService,
-    private snackBar: MatSnackBar,
     private dialog: MatDialog,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute,
+    private toastr: ToastrService 
   ) {
     this.profileForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
@@ -135,6 +137,19 @@ export class ProfileComponent implements OnInit {
     this.loadUserData();
     this.loadUserListings();
     this.loadLikedListings();
+    this.route.queryParams.subscribe(params => {
+      if (params['tab'] === 'saved') {
+        this.activeTab = 'saved';
+      }
+    });
+  }
+
+  private showToast(message: string, type: 'success' | 'error') {
+    if (type === 'success') {
+      this.toastr.success(message, 'Success');
+    } else {
+      this.toastr.error(message, 'Error');
+    }
   }
 
   passwordMatchValidator(form: FormGroup) {
@@ -155,10 +170,12 @@ export class ProfileComponent implements OnInit {
           name: user.name,
           email: user.email
         });
+      this.loadUserListings();
+      this.loadLikedListings();
       },
       error: (error) => {
         console.error('Error loading user data:', error);
-        this.showSnackBar('Failed to load user data', 'error-snackbar');
+        this.showToast('Failed to load user data', 'error');
       }
     });
   }
@@ -220,6 +237,7 @@ export class ProfileComponent implements OnInit {
   onTabChange(index: number) {
     this.activeTab = index === 0 ? 'profile' :
                      index === 1 ? 'security' : 'other';
+                    index === 2 ? 'saved' : 'other';
   }
 
   onEditProfile() {
@@ -266,7 +284,7 @@ export class ProfileComponent implements OnInit {
         this.user.email = response.user.email;
         this.isEditingProfile = false;
         this.isLoading = false;
-        this.showSnackBar('Profile updated successfully!', 'success-snackbar');
+        this.showToast('Profile updated successfully!', 'success');
 
         // Clear password fields
         this.profileForm.patchValue({
@@ -278,7 +296,7 @@ export class ProfileComponent implements OnInit {
       error: (error) => {
         console.error('Error updating profile:', error);
         this.isLoading = false;
-        this.showSnackBar('Failed to update profile', 'error-snackbar');
+        this.showToast('Failed to update profile', 'error');
       }
     });
   }
@@ -313,11 +331,11 @@ export class ProfileComponent implements OnInit {
       next: () => {
         this.userListings = this.userListings.filter(l => l.id !== listing.id);
         this.totalListings = this.userListings.length;
-        this.showSnackBar('Listing deleted successfully!', 'success-snackbar');
+        this.showToast('Listing deleted successfully!', 'success');
       },
       error: (error) => {
         console.error('Error deleting listing:', error);
-        this.showSnackBar('Failed to delete listing', 'error-snackbar');
+        this.showToast('Failed to delete listing', 'error');
       }
     });
   }
@@ -327,17 +345,17 @@ export class ProfileComponent implements OnInit {
       next: () => {
         // Remove from liked listings if unliked
         this.likedListings = this.likedListings.filter(l => l.id !== listing.id);
-        this.showSnackBar('Removed from favorites', 'success-snackbar');
+        this.showToast('Removed from favorites', 'success');
       },
       error: (error) => {
         console.error('Error toggling like:', error);
-        this.showSnackBar('Failed to update favorites', 'error-snackbar');
+        this.showToast('Failed to update favorites', 'error');
       }
     });
   }
 
   onEditListing(listingId: number) {
-    this.router.navigate(['/edit-listing', listingId]);
+    this.router.navigate(['/list', listingId]);
   }
 
   setActiveTab(tab: string) {
@@ -375,20 +393,11 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  private showSnackBar(message: string, panelClass: string) {
-    this.snackBar.open(message, 'Close', {
-      duration: 3000,
-      panelClass: [panelClass],
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
-  }
-
   onLogout() {
     this.authService.logout().subscribe({
       next: () => {
         this.router.navigate(['/']);
-        this.showSnackBar('Logged out successfully', 'success-snackbar');
+        this.showToast('Logged out successfully', 'success');
       },
       error: (error) => {
         console.error('Logout error:', error);

@@ -53,7 +53,11 @@ export class ListingService {
 
   // Update a listing
   updateListing(id: number, listing: Partial<Listing>): Observable<Listing> {
-    return this.http.put<Listing>(`${this.apiUrl}/${id}`, listing);
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+  return this.http.put<Listing>(`${this.apiUrl}/${id}`, listing, { headers });
   }
 
   // Delete a listing

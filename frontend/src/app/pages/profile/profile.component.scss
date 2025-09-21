@@ -262,7 +262,7 @@
 
 .save-btn {
   background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
+  color: white !important;
   border-radius: 12px;
   height: 48px;
   min-width: 140px;
@@ -682,17 +682,6 @@
 
 ::ng-deep .mat-mdc-tab-header {
   border-bottom: 1px solid #e0e0e0;
-}
-
-/* Custom Snackbar Styles */
-::ng-deep .success-snackbar {
-  background-color: #4caf50 !important;
-  color: white !important;
-}
-
-::ng-deep .error-snackbar {
-  background-color: #f44336 !important;
-  color: white !important;
 }
 
 /* Form Field Enhancements */

@@ -45,8 +45,26 @@ class ListingController extends Controller
 
     public function update(Request $request, $id)
     {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'type' => 'required|string',
+            'price' => 'required|numeric',
+            'area' => 'required|numeric',
+            'bedrooms' => 'nullable|integer',
+            'bathrooms' => 'nullable|integer',
+            'address' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'phoneNumber' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
+            'images' => 'nullable|array',
+            'lat' => 'numeric',
+            'lng' => 'numeric',
+        ]);
+
         $listing = Listing::findOrFail($id);
-        $listing->update($request->all());
+        $listing->update($validated);
+
         return response()->json($listing);
     }
 

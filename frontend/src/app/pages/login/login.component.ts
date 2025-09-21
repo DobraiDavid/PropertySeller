@@ -7,11 +7,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-login',
@@ -25,7 +25,6 @@ import { Router } from '@angular/router';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule,
     MatCheckboxModule,
     RouterModule
   ],
@@ -41,7 +40,7 @@ export class LoginComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private toastr: ToastrService
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -81,10 +80,7 @@ export class LoginComponent {
       this.authService.login({ email, password }).subscribe({
         next: () => {
           this.isLoading = false;
-          this.snackBar.open('Welcome back to EstateHub!', 'Close', {
-            duration: 4000,
-            panelClass: ['success-snackbar']
-          });
+          this.toastr.success('Welcome back to EstateHub!', 'Success');
           this.router.navigate(['/']);
         },
         error: (err) => {
@@ -95,10 +91,7 @@ export class LoginComponent {
             this.loginForm.get('password')?.setErrors({ wrongPassword: true });
             this.loginForm.get('password')?.markAsTouched();
           } else {
-            this.snackBar.open(errorMessage, 'Close', {
-              duration: 5000,
-              panelClass: ['error-snackbar']
-            });
+            this.toastr.error(errorMessage, 'Error');
           }
         }
       });

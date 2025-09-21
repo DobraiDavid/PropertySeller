@@ -24,6 +24,7 @@ import { Loader } from '@googlemaps/js-api-loader';
 import { AuthService } from '../../services/auth.service';
 import { LikeService } from '../../services/like.service';
 import { RouterModule } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 declare const google: any;
 
@@ -84,7 +85,8 @@ export class HomeComponent implements OnInit {
     private fb: FormBuilder, 
     private listingService: ListingService,
     private likeService: LikeService, 
-    private router: Router
+    private router: Router,
+    private toastr: ToastrService
   ) {
     this.filterForm = this.fb.group({
       searchQuery: [''],
@@ -234,6 +236,9 @@ export class HomeComponent implements OnInit {
 
   logout() {
     this.authService.logout().subscribe({
+      next: () =>{
+        this.toastr.success("You've successfully signed out!", 'Success');
+      },
       error: () => {
         localStorage.removeItem('token');
       }
@@ -282,6 +287,13 @@ export class HomeComponent implements OnInit {
       error: (error) => {
         console.error('Error loading liked listings:', error);
       }
+    });
+  }
+
+  // Add this method to your HomeComponent class
+  navigateToSavedProperties() {
+    this.router.navigate(['/profile'], { 
+      queryParams: { tab: 'saved' } 
     });
   }
 

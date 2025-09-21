@@ -7,8 +7,8 @@
             <mat-icon class="logo-icon" routerLink="/">home</mat-icon>
             <h1 routerLink="/">EstateHub</h1>
           </div>
-          <h2>List Your Property</h2>
-          <p class="subtitle">Share your property with thousands of potential buyers</p>
+          <h2>{{ isEditMode ? 'Edit Your Property' : 'List Your Property' }}</h2>
+          <p class="subtitle">{{ isEditMode ? 'Update your property details below' : 'Share your property with thousands of potential buyers' }}</p>
         </div>
 
         <form [formGroup]="listingForm" (ngSubmit)="onSubmit()" class="listing-form">
@@ -205,9 +205,9 @@
                       mat-stroked-button 
                       class="upload-button"
                       (click)="fileInput.click()"
-                      [disabled]="selectedImages.length >= maxImages">
+                      [disabled]="(selectedImages.length  + imagePreviewUrls.length)>= maxImages">
                 <mat-icon>cloud_upload</mat-icon>
-                Upload Images ({{selectedImages.length}}/{{maxImages}})
+                Upload Images ({{imagePreviewUrls.length}})
               </button>
               
               <p class="upload-hint">Upload up to {{maxImages}} high-quality images of your property</p>
@@ -242,9 +242,9 @@
                     class="submit-button"
                     [disabled]="isLoading">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span *ngIf="!isLoading">List Property</span>
+                <span *ngIf="!isLoading">{{ isEditMode ? 'Edit Property' : 'List Property' }}</span>
                 <mat-spinner *ngIf="isLoading" diameter="20" class="button-spinner"></mat-spinner>
-                <span *ngIf="isLoading">Creating Listing...</span>
+                <span *ngIf="isLoading">{{ isEditMode ? 'Updating Property...' : 'Creating Listing...' }}</span>
               </div>
             </button>
           </div>

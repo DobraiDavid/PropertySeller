@@ -1,7 +1,6 @@
 import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { ListingService, Listing } from '../../services/listing.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -14,7 +13,7 @@ import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
 import { HttpClient } from '@angular/common/http';
 import { debounceTime, distinctUntilChanged, combineLatest } from 'rxjs';
-import { RouterModule } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: '../assets/leaflet/marker-icon-2x.png',
@@ -45,6 +44,7 @@ export class ListingsComponent implements OnInit, AfterViewInit {
   selectedImages: File[] = [];
   imagePreviewUrls: string[] = [];
   maxImages = 10;
+  isEditMode = false;
   
   private map!: L.Map;
   private marker!: L.Marker;
@@ -61,8 +61,9 @@ export class ListingsComponent implements OnInit, AfterViewInit {
     private fb: FormBuilder,
     private listingService: ListingService,
     private router: Router,
-    private snackBar: MatSnackBar,
-    private http: HttpClient 
+    private http: HttpClient,
+    private route: ActivatedRoute,
+    private toastr: ToastrService
   ) {
     this.listingForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
@@ -83,6 +84,11 @@ export class ListingsComponent implements OnInit, AfterViewInit {
   
 
   ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.loadListing(+id);  
+      this.isEditMode = true;  
+    }
     const address$ = this.listingForm.get('address')!.valueChanges.pipe(
       debounceTime(500),
       distinctUntilChanged()
@@ -93,7 +99,6 @@ export class ListingsComponent implements OnInit, AfterViewInit {
       distinctUntilChanged()
     );
 
-    // ✅ Combine address + city
     combineLatest([address$, city$]).subscribe(([address, city]) => {
       this.tryGeocode(address, city);
     });
@@ -103,7 +108,7 @@ export class ListingsComponent implements OnInit, AfterViewInit {
     this.initMap();
   }
 
- private initMap(): void {
+  private initMap(): void {
     this.map = L.map('map').setView([47.956967, 21.715700], 13); 
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -159,11 +164,8 @@ export class ListingsComponent implements OnInit, AfterViewInit {
   onImageSelect(event: any): void {
     const files = Array.from(event.target.files) as File[];
     
-    if (this.selectedImages.length + files.length > this.maxImages) {
-      this.snackBar.open(`You can upload maximum ${this.maxImages} images`, 'Close', {
-        duration: 3000,
-        panelClass: ['error-snackbar']
-      });
+    if (this.selectedImages.length + this.imagePreviewUrls.length + files.length > this.maxImages) {
+      this.toastr.error(`You can upload maximum ${this.maxImages} images`, 'Error');
       return;
     }
 
@@ -230,11 +232,48 @@ export class ListingsComponent implements OnInit, AfterViewInit {
     return displayNames[fieldName] || fieldName;
   }
 
+  private loadListing(id: number): void {
+    this.isLoading = true;
+    this.listingService.getListing(id).subscribe({
+      next: (listing: Listing) => {
+        this.isLoading = false;
+        this.listingForm.patchValue({
+          title: listing.title,
+          description: listing.description,
+          type: listing.type,
+          price: listing.price / 1000000,
+          area: listing.area,
+          bedrooms: listing.bedrooms,
+          bathrooms: listing.bathrooms,
+          address: listing.address,
+          city: listing.city,
+          phoneNumber: listing.phoneNumber,
+          email: listing.email,
+          lat: listing.lat,
+          lng: listing.lng
+        });
+
+        if (listing.images) {
+          this.imagePreviewUrls = listing.images;
+        }
+
+        if (listing.lat && listing.lng) {
+          this.setMarker(listing.lat, listing.lng);
+        }
+      },
+      error: (err) => {
+        this.isLoading = false;
+        console.error('Failed to load listing', err);
+        this.toastr.error('Failed to load listing', 'Error');
+      }
+    });
+  }
+
   onSubmit(): void {
     if (this.listingForm.valid) {
       this.isLoading = true;
-      
       const formData = this.listingForm.value;
+      const id = this.route.snapshot.paramMap.get('id');
 
       if (formData.price) formData.price = Number(formData.price) * 1000000;
       if (formData.area) formData.area = Number(formData.area);
@@ -245,24 +284,34 @@ export class ListingsComponent implements OnInit, AfterViewInit {
         formData.images = this.imagePreviewUrls; 
       }
 
-      this.listingService.createListing(formData).subscribe({
-        next: (response) => {
-          this.isLoading = false;
-          this.snackBar.open('Property listed successfully!', 'Close', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
-          this.router.navigate(['/']);
-        },
-        error: (error) => {
-          this.isLoading = false;
-          console.error('Error creating listing:', error);
-          this.snackBar.open('Failed to create listing. Please try again.', 'Close', {
-            duration: 3000,
-            panelClass: ['error-snackbar']
-          });
-        }
-      });
+      if (id) {
+        // EDIT mode
+        this.listingService.updateListing(+id, formData).subscribe({
+          next: () => {
+            this.isLoading = false;
+            this.toastr.success('Property updated successfully!', 'Success');
+            this.router.navigate(['/profile']);
+          },
+          error: (error) => {
+            this.isLoading = false;
+            console.error('Error updating listing:', error);
+            this.toastr.error('Failed to update listing', 'Error');
+          }
+        });
+      } else {
+        this.listingService.createListing(formData).subscribe({
+          next: (response) => {
+            this.isLoading = false;
+            this.toastr.success('Property listed successfully!', 'Success');
+            this.router.navigate(['/']);
+          },
+          error: (error) => {
+            this.isLoading = false;
+            console.error('Error creating listing:', error);
+            this.toastr.error('Failed to create listing. Please try again.', 'Error');
+          }
+        });
+      }
     } else {
       Object.keys(this.listingForm.controls).forEach(key => {
         this.listingForm.get(key)?.markAsTouched();
@@ -271,6 +320,10 @@ export class ListingsComponent implements OnInit, AfterViewInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/']);
+    if (this.isEditMode) {
+      this.router.navigate(['/profile']);
+    } else {
+      this.router.navigate(['/']);
+    }
   }
 }

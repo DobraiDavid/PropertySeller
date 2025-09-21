@@ -7,9 +7,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-register',
@@ -22,8 +22,7 @@ import { Router } from '@angular/router';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatProgressSpinnerModule
   ],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss']
@@ -37,8 +36,8 @@ export class RegisterComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private snackBar: MatSnackBar,
-    private router: Router
+    private router: Router,
+    private toastr: ToastrService
   ) {
     this.registerForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
@@ -89,51 +88,39 @@ export class RegisterComponent {
     return '';
   }
 
-onSubmit() {
-  if (this.registerForm.valid) {
-    this.isLoading = true;
-    const formValue = this.registerForm.value;
+  onSubmit() {
+    if (this.registerForm.valid) {
+      this.isLoading = true;
+      const formValue = this.registerForm.value;
 
-    this.authService.register(formValue).subscribe({
-      next: (res) => {
-
-        // Automatically log in after registration
-        this.authService.login({
-          email: formValue.email,
-          password: formValue.password
-        }).subscribe({
-          next: (loginRes) => {
-            this.isLoading = false;
-            this.snackBar.open('Registration successful! You are now logged in.', 'Close', {
-              duration: 5000,
-              panelClass: ['success-snackbar']
-            });
-            this.router.navigate(['/']); 
-          },
-          error: (loginErr) => {
-            this.isLoading = false;
-            this.snackBar.open('Registration succeeded but login failed. Please log in manually.', 'Close', {
-              duration: 5000,
-              panelClass: ['error-snackbar']
-            });
-            console.error('Login failed after registration:', loginErr);
-          }
-        });
-      },
-      error: (err) => {
-        this.isLoading = false;
-        this.snackBar.open('Registration failed. Please try again.', 'Close', {
-          duration: 5000,
-          panelClass: ['error-snackbar']
-        });
-        console.error('Registration failed:', err);
-      }
-    });
-  } else {
-    this.markFormGroupTouched();
+      this.authService.register(formValue).subscribe({
+        next: () => {
+          this.authService.login({
+            email: formValue.email,
+            password: formValue.password
+          }).subscribe({
+            next: () => {
+              this.isLoading = false;
+              this.toastr.success('Registration successful! You are now logged in.', 'Success');
+              this.router.navigate(['/']); 
+            },
+            error: (loginErr) => {
+              this.isLoading = false;
+              this.toastr.error('Registration succeeded but login failed. Please log in manually.', 'Login Failed');
+              console.error('Login failed after registration:', loginErr);
+            }
+          });
+        },
+        error: (err) => {
+          this.isLoading = false;
+          this.toastr.error('Registration failed. Please try again.', 'Error');
+          console.error('Registration failed:', err);
+        }
+      });
+    } else {
+      this.markFormGroupTouched();
+    }
   }
-}
-
 
   private markFormGroupTouched() {
     Object.keys(this.registerForm.controls).forEach(key => {
@@ -143,6 +130,6 @@ onSubmit() {
   }
 
   goToLogin() {
-  this.router.navigate(['/login']);
+    this.router.navigate(['/login']);
   }
 }
