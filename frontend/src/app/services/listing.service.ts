@@ -28,7 +28,7 @@ export interface Listing {
   providedIn: 'root'
 })
 export class ListingService {
-  private apiUrl = 'https://estatehub-w37i.onrender.com/api';
+  private apiUrl = 'https://estatehub-w37i.onrender.com/api/listings';
 
   constructor(private http: HttpClient) {}
 
