@@ -7,7 +7,7 @@ import { Observable, tap } from 'rxjs';
 })
 export class AuthService {
 
-  private apiUrl = 'https://estatehub.onrender.com/api'; // Laravel backend URL
+  private apiUrl = 'https://estatehub-w37i.onrender.com/api'; // Laravel backend URL
 
   constructor(private http: HttpClient) {}
 

@@ -8,7 +8,7 @@ import { Listing } from './listing.service';
 })
 export class LikeService {
 
-  private apiUrl = 'https://estatehub.onrender.com/api';
+  private apiUrl = 'https://estatehub-w37i.onrender.com/api';
 
   constructor(private http: HttpClient) {}
 
